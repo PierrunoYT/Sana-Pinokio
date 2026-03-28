@@ -75,7 +75,7 @@ module.exports = {
           href: "update.js",
         }, {
           icon: "fa-solid fa-plug",
-          text: "Install",
+          text: "Reinstall",
           href: "install.js",
         }, {
           icon: "fa-solid fa-file-zipper",
