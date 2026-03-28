@@ -3,7 +3,7 @@ module.exports = {
   version: "5.0",
   title: "Sana",
   description: "Fast Image Generation with Sana Diffusion Model",
-  icon: "icon.png",
+  icon: "icon.jpg",
   menu: async (kernel, info) => {
     let installed = info.exists("env")
     let running = {
