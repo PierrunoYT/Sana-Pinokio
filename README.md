@@ -77,7 +77,7 @@ Sana-Pinokio/
 ├── link.js             # Disk space optimization script
 ├── reset.js            # Reset installation script
 ├── update.js           # Update script
-└── icon.png            # Plugin icon
+└── icon.jpg            # Plugin icon
 ```
 
 ## Scripts

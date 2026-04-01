@@ -27,26 +27,6 @@ module.exports = {
         device: "{{input.device}}"
       }
     },
-    // Install all dependencies from requirements.txt first
-    {
-      method: "shell.run",
-      params: {
-        venv: "env",
-        message: [
-          "uv pip install -r requirements.txt"
-        ],
-      }
-    },
-    // Pre-download the Sana model
-    {
-      method: "shell.run",
-      params: {
-        venv: "env",
-        message: [
-          "huggingface-cli download Efficient-Large-Model/SANA1.5_1.6B_1024px_diffusers"
-        ],
-      }
-    },
     // Install GPU PyTorch (auto-detect) - only if GPU was selected
     {
       when: "{{local.device === 'gpu'}}",
@@ -68,6 +48,26 @@ module.exports = {
         venv: "env",
         message: [
           "uv pip install torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cpu"
+        ],
+      }
+    },
+    // Install all dependencies from requirements.txt after torch
+    {
+      method: "shell.run",
+      params: {
+        venv: "env",
+        message: [
+          "uv pip install -r requirements.txt"
+        ],
+      }
+    },
+    // Pre-download the Sana model
+    {
+      method: "shell.run",
+      params: {
+        venv: "env",
+        message: [
+          "huggingface-cli download Efficient-Large-Model/SANA1.5_1.6B_1024px_diffusers"
         ],
       }
     }
