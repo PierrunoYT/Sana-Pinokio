@@ -6,6 +6,7 @@ module.exports = {
       params: {
         venv: "env",
         env: { },
+        path: "app",
         message: [
           "python app.py --port {{port}}",
         ],

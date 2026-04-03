@@ -25,7 +25,7 @@ A Pinokio plugin for running the Sana diffusion model - a fast and efficient ima
 
 The installation process will:
 - Create a Python virtual environment
-- Install all required dependencies from `requirements.txt`
+- Install all required dependencies from `app/requirements.txt`
 - Pre-download the Sana model from Hugging Face
 - Install PyTorch with CUDA support (if NVIDIA GPU detected)
 
@@ -68,15 +68,17 @@ The installation process will:
 
 ```
 Sana-Pinokio/
-├── app.py              # Main Gradio web application
+├── app/
+│   ├── app.py          # Main Gradio web application
+│   └── requirements.txt # Python dependencies
 ├── install.js          # Pinokio installation script
 ├── start.js            # Pinokio startup script
-├── pinokio.js          # Pinokio configuration and menu
+├── pinokio.js          # Pinokio UI and menu
+├── pinokio.json        # Pinokio metadata (title, description, icon)
 ├── torch.js            # PyTorch installation script (platform-aware)
-├── requirements.txt    # Python dependencies
 ├── link.js             # Disk space optimization script
 ├── reset.js            # Reset installation script
-├── update.js           # Update script
+├── update.js           # Update script (git pull + refresh deps)
 └── icon.jpg            # Plugin icon
 ```
 
@@ -84,7 +86,7 @@ Sana-Pinokio/
 
 - **Install**: Sets up the environment and downloads the model
 - **Start**: Launches the Gradio web interface
-- **Update**: Updates dependencies (if available)
+- **Update**: Pulls the latest repository changes and reinstalls Python dependencies from `app/requirements.txt`
 - **Save Disk Space**: Deduplicates redundant library files
 - **Reset**: Removes the installation and reverts to pre-install state
 

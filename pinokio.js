@@ -1,4 +1,3 @@
-const path = require('path')
 module.exports = {
   version: "5.0",
   title: "Sana",
