@@ -171,6 +171,7 @@ with gr.Blocks(title="Sana Image Generator", theme=gr.themes.Soft()) as demo:
             output_image = gr.Image(
                 label="Generated Image",
                 type="pil",
+                format="png",
             )
     
     gr.Markdown(
