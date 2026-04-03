@@ -6,13 +6,13 @@ module.exports = {
       params: {
         venv: "env",
         env: { },
-        path: "app",
+        // cwd = project root so venv resolves to ./env (not app/env when path was "app")
         message: [
-          "python app.py --port {{port}}",
+          "python app/app.py --port {{port}}",
         ],
         on: [{
-          // Monitor for the HTTP URL pattern
-          "event": "/(http:\\/\\/[0-9.]+:[0-9]+)/",
+          // Capture localhost URL in Gepeto-recommended generic form
+          "event": "/(http:\\/\\/[0-9.:]+)/",
           "done": true
         }]
       }
