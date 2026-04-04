@@ -69,6 +69,7 @@ module.exports = {
       method: "shell.run",
       params: {
         venv: "env",
+        path: ".",
         message: [
           "huggingface-cli download Efficient-Large-Model/SANA1.5_1.6B_1024px_diffusers"
         ],

@@ -5,6 +5,7 @@ module.exports = {
       method: "shell.run",
       params: {
         venv: "env",
+        path: ".",
         env: { },
         // cwd = project root so venv resolves to ./env (not app/env when path was "app")
         message: [
