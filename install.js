@@ -35,9 +35,7 @@ module.exports = {
         uri: "torch.js",
         params: {
           venv: "env",
-          path: ".",
-          xformers: true,
-          triton: true
+          path: "."
         }
       }
     },
@@ -61,6 +59,17 @@ module.exports = {
         path: ".",
         message: [
           "uv pip install -r app/requirements.txt"
+        ],
+      }
+    },
+    // Fail the install early if PyTorch was not installed into the launch venv
+    {
+      method: "shell.run",
+      params: {
+        venv: "env",
+        path: ".",
+        message: [
+          "python -c \"import torch; print('PyTorch', torch.__version__)\""
         ],
       }
     },
