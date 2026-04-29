@@ -111,7 +111,68 @@ print("Initializing Sana...")
 load_model()
 
 # Create Gradio interface
-with gr.Blocks(title="Sana Image Generator", theme=gr.themes.Soft()) as demo:
+CTRL_ENTER_JS = """
+function() {
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      var btn = document.getElementById('generate_btn');
+      if (btn) btn.click();
+    }
+  });
+}
+"""
+
+SEED_CSS = """
+/* Seed row is the absolute-positioning context */
+#seed_row {
+    position: relative !important;
+    overflow: visible  !important;
+}
+
+/* Pull buttons out of flex flow and overlay on right of input.
+   'bottom' is tuned so they sit centred within the input field
+   (below the "Seed" label that adds ~26 px at the top of the component). */
+#random_seed_btn,
+#reuse_seed_btn {
+    position:   absolute !important;
+    bottom:     12px     !important;
+    z-index:    10       !important;
+    width:      26px     !important;
+    min-width:  26px     !important;
+    max-width:  26px     !important;
+    height:     26px     !important;
+    min-height: 26px     !important;
+    max-height: 26px     !important;
+    padding:    0        !important;
+    margin:     0        !important;
+    font-size:  13px     !important;
+    line-height:1        !important;
+    flex:       none     !important;
+    /* zero out the wrapper so it takes no flex width */
+    --button-shadow: none;
+}
+/* Zero out the outer Gradio wrapper divs that wrap each button */
+#random_seed_btn,
+#reuse_seed_btn {
+    /* wrapper also needs zero width in flex */
+}
+#reuse_seed_btn  { right: 6px  !important; }
+#random_seed_btn { right: 36px !important; }
+
+/* Pad right of input so typed text doesn't slide under the buttons */
+#seed_number input {
+    padding-right: 74px !important;
+}
+
+/* Gray-out the seed number when the field is disabled */
+#seed_number input:disabled {
+    opacity: 0.38;
+    color:   #888 !important;
+    -webkit-text-fill-color: #888 !important;
+}
+"""
+
+with gr.Blocks(title="Sana Image Generator", theme=gr.themes.Soft(), js=CTRL_ENTER_JS, css=SEED_CSS) as demo:
     gr.Markdown(
         f"""
         # 🎨 Sana Image Generator
@@ -171,20 +232,20 @@ with gr.Blocks(title="Sana Image Generator", theme=gr.themes.Soft()) as demo:
             # State: tracks whether random mode is active
             random_seed_state = gr.State(value=True)
 
-            gr.Markdown("**Seed**")
-            with gr.Row(equal_height=True):
-                random_btn = gr.Button("🎲", variant="primary",  scale=0, min_width=48, elem_id="random_seed_btn")
-                reuse_btn  = gr.Button("♻️", variant="secondary", scale=0, min_width=48, elem_id="reuse_seed_btn")
+            with gr.Row(equal_height=True, elem_id="seed_row"):
                 seed_input = gr.Number(
                     value=42,
-                    label="",
+                    label="Seed",
                     precision=0,
                     interactive=False,   # disabled by default (random mode on)
                     scale=1,
                     elem_id="seed_number",
                 )
+                # Buttons are absolutely positioned over the seed input via CSS
+                random_btn = gr.Button("🎲", variant="primary",  scale=0, elem_id="random_seed_btn")
+                reuse_btn  = gr.Button("♻️", variant="secondary", scale=0, elem_id="reuse_seed_btn")
 
-            generate_btn = gr.Button("Generate", variant="primary", size="lg")
+            generate_btn = gr.Button("Generate", variant="primary", size="lg", elem_id="generate_btn")
         
         with gr.Column(scale=1):
             output_image = gr.Image(
@@ -206,12 +267,22 @@ with gr.Blocks(title="Sana Image Generator", theme=gr.themes.Soft()) as demo:
     # --- Seed button handlers ---
 
     def on_random_click():
-        """Switch to random-seed mode: disable seed field."""
-        return True, gr.update(interactive=False)
+        """Switch to random-seed mode: disable seed field, highlight 🎲 active."""
+        return (
+            True,
+            gr.update(interactive=False),
+            gr.update(variant="primary"),    # 🎲 → active
+            gr.update(variant="secondary"),  # ♻️ → inactive
+        )
 
     def on_reuse_click(last_seed):
-        """Switch to manual mode and load the last used seed into the field."""
-        return False, gr.update(value=last_seed, interactive=True)
+        """Switch to manual mode and load the last used seed, highlight ♻️ active."""
+        return (
+            False,
+            gr.update(value=last_seed, interactive=True),
+            gr.update(variant="secondary"),  # 🎲 → inactive
+            gr.update(variant="primary"),    # ♻️ → active
+        )
 
     # State for last-used seed (starts at 42 so ♻️ has something on first press)
     last_seed_state = gr.State(value=42)
@@ -219,13 +290,13 @@ with gr.Blocks(title="Sana Image Generator", theme=gr.themes.Soft()) as demo:
     random_btn.click(
         fn=on_random_click,
         inputs=[],
-        outputs=[random_seed_state, seed_input],
+        outputs=[random_seed_state, seed_input, random_btn, reuse_btn],
     )
 
     reuse_btn.click(
         fn=on_reuse_click,
         inputs=[last_seed_state],
-        outputs=[random_seed_state, seed_input],
+        outputs=[random_seed_state, seed_input, random_btn, reuse_btn],
     )
 
     def run_generate(prompt, steps, guidance, seed, use_random, width, height):
