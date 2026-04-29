@@ -59,17 +59,25 @@ def load_model():
         print(f"Model loaded successfully on {DEVICE}!")
     return pipe
 
-def generate_image(prompt, steps=20, guidance=4.5, seed=42, width=1024, height=1024):
-    """Generate an image from a text prompt"""
+import random as _random
+
+def generate_image(prompt, steps=20, guidance=4.5, seed=42, use_random_seed=True, width=1024, height=1024):
+    """Generate an image from a text prompt.
+    
+    Returns (image, seed_used) so the UI can display the seed that was actually used.
+    """
     try:
         if pipe is None:
             load_model()
         
+        # Pick seed
+        actual_seed = _random.randint(0, 2**32 - 1) if use_random_seed else int(seed)
+        
         # Create generator on appropriate device
         if DEVICE == "cpu":
-            generator = torch.Generator().manual_seed(int(seed))
+            generator = torch.Generator().manual_seed(actual_seed)
         else:
-            generator = torch.Generator(device=DEVICE).manual_seed(int(seed))
+            generator = torch.Generator(device=DEVICE).manual_seed(actual_seed)
         
         # Reduce image size for CPU to make it more manageable
         if DEVICE == "cpu":
@@ -92,11 +100,11 @@ def generate_image(prompt, steps=20, guidance=4.5, seed=42, width=1024, height=1
         else:
             image = result.images[0]
         
-        return image
+        return image, actual_seed
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return f"Error generating image: {str(e)}"
+        return None, int(seed) if not use_random_seed else 0
 
 # Load model on startup
 print("Initializing Sana...")
@@ -159,12 +167,23 @@ with gr.Blocks(title="Sana Image Generator", theme=gr.themes.Soft()) as demo:
                 label="Guidance Scale",
             )
             
-            seed_input = gr.Number(
-                value=42,
-                label="Seed",
-                precision=0,
-            )
-            
+            # --- Seed row ---
+            # State: tracks whether random mode is active
+            random_seed_state = gr.State(value=True)
+
+            gr.Markdown("**Seed**")
+            with gr.Row(equal_height=True):
+                random_btn = gr.Button("🎲", variant="primary",  scale=0, min_width=48, elem_id="random_seed_btn")
+                reuse_btn  = gr.Button("♻️", variant="secondary", scale=0, min_width=48, elem_id="reuse_seed_btn")
+                seed_input = gr.Number(
+                    value=42,
+                    label="",
+                    precision=0,
+                    interactive=False,   # disabled by default (random mode on)
+                    scale=1,
+                    elem_id="seed_number",
+                )
+
             generate_btn = gr.Button("Generate", variant="primary", size="lg")
         
         with gr.Column(scale=1):
@@ -184,10 +203,40 @@ with gr.Blocks(title="Sana Image Generator", theme=gr.themes.Soft()) as demo:
         """
     )
     
+    # --- Seed button handlers ---
+
+    def on_random_click():
+        """Switch to random-seed mode: disable seed field."""
+        return True, gr.update(interactive=False)
+
+    def on_reuse_click(last_seed):
+        """Switch to manual mode and load the last used seed into the field."""
+        return False, gr.update(value=last_seed, interactive=True)
+
+    # State for last-used seed (starts at 42 so ♻️ has something on first press)
+    last_seed_state = gr.State(value=42)
+
+    random_btn.click(
+        fn=on_random_click,
+        inputs=[],
+        outputs=[random_seed_state, seed_input],
+    )
+
+    reuse_btn.click(
+        fn=on_reuse_click,
+        inputs=[last_seed_state],
+        outputs=[random_seed_state, seed_input],
+    )
+
+    def run_generate(prompt, steps, guidance, seed, use_random, width, height):
+        image, used_seed = generate_image(prompt, steps, guidance, seed, use_random, width, height)
+        # After generation, update seed field to show what was used
+        return image, used_seed, gr.update(value=used_seed)
+
     generate_btn.click(
-        fn=generate_image,
-        inputs=[prompt_input, steps_slider, guidance_slider, seed_input, width_slider, height_slider],
-        outputs=output_image,
+        fn=run_generate,
+        inputs=[prompt_input, steps_slider, guidance_slider, seed_input, random_seed_state, width_slider, height_slider],
+        outputs=[output_image, last_seed_state, seed_input],
     )
     
     # Example prompts
