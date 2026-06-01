@@ -1,4 +1,7 @@
 module.exports = {
+  requires: {
+    bundle: "ai"
+  },
   run: [
     // Ask user to choose CPU or GPU installation
     {
@@ -75,13 +78,9 @@ module.exports = {
     },
     // Pre-download the Sana model
     {
-      method: "shell.run",
+      method: "hf.download",
       params: {
-        venv: "env",
-        path: ".",
-        message: [
-          "huggingface-cli download Efficient-Large-Model/SANA1.5_1.6B_1024px_diffusers"
-        ],
+        "_": ["Efficient-Large-Model/SANA1.5_1.6B_1024px_diffusers"]
       }
     }
   ]
