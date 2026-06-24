@@ -1,7 +1,9 @@
+import os
+import random
+
 import torch
 import gradio as gr
 from diffusers import SanaPipeline
-import os
 
 # Detect device - prioritize CUDA, then MPS (Apple Silicon), then CPU
 def get_device():
@@ -59,8 +61,6 @@ def load_model():
         print(f"Model loaded successfully on {DEVICE}!")
     return pipe
 
-import random as _random
-
 def generate_image(prompt, steps=20, guidance=4.5, seed=42, use_random_seed=True, width=1024, height=1024):
     """Generate an image from a text prompt.
     
@@ -71,7 +71,7 @@ def generate_image(prompt, steps=20, guidance=4.5, seed=42, use_random_seed=True
             load_model()
         
         # Pick seed
-        actual_seed = _random.randint(0, 2**32 - 1) if use_random_seed else int(seed)
+        actual_seed = random.randint(0, 2**32 - 1) if use_random_seed else int(seed)
         
         # Create generator on appropriate device
         if DEVICE == "cpu":
@@ -104,7 +104,7 @@ def generate_image(prompt, steps=20, guidance=4.5, seed=42, use_random_seed=True
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return None, int(seed) if not use_random_seed else 0
+        raise gr.Error(f"Error generating image: {str(e)}") from e
 
 # Load model on startup
 print("Initializing Sana...")
