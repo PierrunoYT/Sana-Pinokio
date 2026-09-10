@@ -9,7 +9,7 @@ module.exports = {
         env: { },
         // cwd = project root so venv resolves to ./env (not app/env when path was "app")
         message: [
-          "python app/app.py --port {{port}}",
+          "python app/app.py",
         ],
         on: [{
           // Capture localhost URL in Gepeto-recommended generic form

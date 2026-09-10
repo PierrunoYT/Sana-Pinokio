@@ -4,7 +4,7 @@ module.exports = {
   description: "Fast Image Generation with Sana Diffusion Model",
   icon: "icon.jpg",
   menu: async (kernel, info) => {
-    let installed = info.exists("env")
+    let installed = info.exists("env/.installed")
     let running = {
       install: info.running("install.js"),
       start: info.running("start.js"),
@@ -19,7 +19,7 @@ module.exports = {
         text: "Installing",
         href: "install.js",
       }]
-    } else if (installed) {
+    } else if (installed || running.start || running.update || running.reset || running.link) {
       if (running.start) {
         let local = info.local("start.js")
         if (local && local.url) {
