@@ -1,145 +1,164 @@
-# Sana Pinokio Plugin
+# Sana Pinokio Launcher
 
-A Pinokio plugin for running the Sana diffusion model - a fast and efficient image generation model capable of creating high-quality 1024×1024 images from text prompts.
+Run the SANA1.5 1.6B diffusion model locally with a Gradio text-to-image interface.
 
-## Features
+## Installation and use
 
-- 🎨 **Fast Image Generation**: Generate 1024×1024 images in seconds using the SANA1.5 1.6B model
-- 🌐 **Web UI**: Beautiful Gradio interface for easy interaction
-- 🚀 **Easy Installation**: Automated setup through Pinokio
-- 🎛️ **Customizable Parameters**: Control inference steps, guidance scale, seed, and image dimensions
-- 💻 **GPU Optimized**: Supports CUDA acceleration with bfloat16 precision
+1. Open this repository in Pinokio and click **Install**.
+2. Choose **GPU** for automatic CUDA, ROCm, or Apple Silicon MPS detection, or **CPU Only**.
+3. Wait for dependency verification and the model download to finish.
+4. Click **Start**, then **Open Web UI**. The model loads on the first generation.
+5. Enter a prompt and click **Generate**, or press Ctrl+Enter / Cmd+Enter.
 
-## Requirements
+The server binds to `127.0.0.1` and selects an available port. Use the URL shown by
+Pinokio, which may differ from `http://127.0.0.1:7860`.
 
-- Pinokio installed and running
-- NVIDIA GPU with CUDA support (recommended) or CPU
-- Python 3.10+ (managed by Pinokio)
-- Sufficient disk space for the model (~3-4 GB)
+CPU mode is saved in `env/sana-device.json` and applies on subsequent starts,
+including on Apple Silicon. To change modes, run **Reinstall**. For a manual
+launch, `SANA_DEVICE=cpu` or `SANA_DEVICE=auto` overrides that saved preference.
 
-## Installation
+An installation is ready only after all setup steps succeed. Existing installs
+from before the readiness marker was introduced show **Install** once; run it
+to verify dependencies and save the device preference. Model downloads reuse
+the Hugging Face cache.
 
-1. Install this plugin in Pinokio
-2. Click **Install** in the Pinokio interface
-3. Wait for dependencies and the model to download (first-time setup may take several minutes)
+## Hardware and dependencies
 
-The installation process will:
-- Create a Python virtual environment
-- Install all required dependencies from `app/requirements.txt`
-- Pre-download the Sana model from Hugging Face
-- Install PyTorch with CUDA support (if NVIDIA GPU detected)
+- Pinokio with its AI bundle and Python 3.10–3.13.
+- Windows/Linux x64, or macOS on Apple Silicon. Intel macOS is unsupported by
+  the pinned PyTorch 2.7 release.
+- NVIDIA on Windows/Linux: CUDA 12.8 wheels; requires a compatible NVIDIA driver.
+- AMD on Linux: ROCm 6.3 wheels; requires compatible hardware and drivers.
+- AMD on Windows and machines without a supported accelerator: CPU fallback.
+  This app does not implement DirectML.
+- Apple Silicon: MPS when available; CPU otherwise.
+- Enough memory and disk space for the full pipeline, including the text encoder,
+  VAE, weights, and Python environment. The 1.6B label describes the diffusion
+  transformer, not the total download size. FP32 uses more memory than BF16.
 
-## Usage
+The launcher pins PyTorch 2.7.0 and Diffusers 0.35.2, with Transformers 4.x to
+match Hugging Face Hub 0.36.0. NVIDIA/ROCm devices with BF16 support use BF16;
+other devices use FP32. Sana's text encoder and VAE require BF16 or FP32,
+so the MPS path uses FP32. See the [Sana precision documentation](https://huggingface.co/docs/diffusers/v0.35.0/en/api/pipelines/sana).
 
-1. Click **Start** in the Pinokio interface
-2. Wait for the application to launch (the model will load into GPU memory)
-3. Click **Open Web UI** when it appears in the menu
-4. Enter your text prompt and adjust parameters as needed
-5. Click **Generate** to create your image
+## Generation controls
 
-### Parameters
+| Control | CPU | GPU |
+| --- | --- | --- |
+| Width / height | 256–1024, default 512 | 256–2048, default 1024 |
+| Inference steps | 5–30, default 10 | 5–50, default 20 |
+| Guidance scale | 1–10, default 4.5 | 1–10, default 4.5 |
 
-- **Prompt**: Text description of the image you want to generate
-- **Width/Height**: Image dimensions (512-2048px, default: 1024×1024)
-- **Inference Steps**: Number of denoising steps (10-50, default: 20)
-  - Higher values = better quality but slower generation
-- **Guidance Scale**: How closely the image follows the prompt (1.0-10.0, default: 4.5)
-  - Higher values = more adherence to prompt
-- **Seed**: Random seed for reproducibility (default: 42)
-  - Change for different variations
+Dimensions use increments of 64. The model is trained for 1024px output; larger
+sizes increase memory use and may not improve quality.
 
-### Example Prompts
+Random seed mode is enabled initially. **🎲** selects random mode and disables
+the seed field. **♻️** selects manual mode and fills in the last successful seed
+(initially 42). Manual seeds range from 0 to 4294967295. The field displays the
+seed used after generation; reuse it with the same prompt and settings to
+reproduce a result on the same software and hardware. Exact results can differ
+across devices or dependency versions.
 
-- `a futuristic city at sunset, cyberpunk style`
-- `a serene mountain landscape with a lake, photorealistic`
-- `a cute robot reading a book, digital art`
-- `an abstract painting with vibrant colors`
-- `a steampunk airship flying through clouds`
+Example prompts:
 
-## Model Information
+- A futuristic city at sunset, cyberpunk style
+- A serene mountain landscape with a lake, photorealistic
+- A cute robot reading a book, digital art
 
-- **Model**: Efficient-Large-Model/SANA1.5_1.6B_1024px_diffusers
-- **Size**: ~1.6B parameters
-- **Precision**: bfloat16 (BF16)
-- **Resolution**: Up to 1024×1024 pixels
-- **Speed**: ~1-2 seconds per image on RTX 4090
+## API
 
-## Project Structure
+The named Gradio endpoint is `/generate`. It accepts seven arguments in this
+order: prompt, steps, guidance, seed, random-seed mode, width, height. Set
+random-seed mode to `false` to use the supplied seed. The endpoint returns an
+image and the seed used. Calls share a serialized pipeline with the UI.
 
+Replace the example base URL with the URL from Pinokio.
+
+### Python
+
+Install `gradio_client` in your client environment:
+
+```python
+from gradio_client import Client
+
+client = Client("http://127.0.0.1:7860")
+image_path, used_seed = client.predict(
+    "A cute robot reading a book", 10, 4.5, 42, False, 512, 512,
+    api_name="/generate",
+)
+print(image_path, used_seed)
 ```
-Sana-Pinokio/
-├── app/
-│   ├── app.py          # Main Gradio web application
-│   └── requirements.txt # Python dependencies
-├── install.js          # Pinokio installation script
-├── start.js            # Pinokio startup script
-├── pinokio.js          # Pinokio UI and menu
-├── pinokio.json        # Pinokio metadata (title, description, icon)
-├── torch.js            # PyTorch installation script (platform-aware)
-├── link.js             # Disk space optimization script
-├── reset.js            # Reset installation script
-├── update.js           # Update script (git pull + refresh deps)
-└── icon.jpg            # Plugin icon
+
+### JavaScript
+
+Install `@gradio/client` in your client project:
+
+```javascript
+import { Client } from "@gradio/client";
+
+const client = await Client.connect("http://127.0.0.1:7860");
+const result = await client.predict("/generate", [
+  "A cute robot reading a book", 10, 4.5, 42, false, 512, 512,
+]);
+console.log(result.data); // image metadata and seed used
 ```
 
-## Scripts
+### curl
 
-- **Install**: Sets up the environment and downloads the model
-- **Start**: Launches the Gradio web interface
-- **Update**: Pulls the latest repository changes and reinstalls Python dependencies from `app/requirements.txt`
-- **Save Disk Space**: Deduplicates redundant library files
-- **Reset**: Removes the installation and reverts to pre-install state
+Submit the call, then read its server-sent events using the returned `event_id`:
 
-## Technical Details
+```sh
+curl -X POST http://127.0.0.1:7860/gradio_api/call/generate \
+  -H "Content-Type: application/json" \
+  -d '{"data":["A cute robot reading a book",10,4.5,42,false,512,512]}'
 
-### Architecture
+curl -N http://127.0.0.1:7860/gradio_api/call/generate/EVENT_ID
+```
 
-The application uses:
-- **Diffusers**: Hugging Face library for diffusion models
-- **Gradio**: Web UI framework
-- **PyTorch**: Deep learning framework with CUDA support
-- **Transformers**: Model loading and text encoding
+The `complete` event contains image metadata (including its URL) and the seed.
 
-### Performance Optimizations
+## Maintenance
 
-- Model loaded in bfloat16 precision for faster inference
-- VAE and text encoder converted to bfloat16
-- CUDA acceleration for GPU inference
-- Optional xformers and triton support for additional speedups
+- **Update**: fast-forward the repository and refresh/verify Python dependencies.
+  If local commits prevent a fast-forward, resolve the divergence before retrying.
+- **Reinstall**: choose the device again and rebuild the selected PyTorch packages.
+- **Save Disk Space**: use Pinokio's virtual-environment library deduplication.
+- **Reset**: remove `env`, including dependencies, readiness, and device preference.
+  Tracked application files and the shared Hugging Face model cache remain intact.
 
-### Model Storage
-
-Models are cached in `~/.cache/huggingface/hub/` by default. The Sana model will be automatically downloaded on first use if not pre-downloaded during installation.
+Model storage follows Hugging Face's cache configuration (`HF_HOME` /
+`HF_HUB_CACHE`), normally `~/.cache/huggingface/hub` when not overridden by Pinokio.
 
 ## Troubleshooting
 
-### Model Loading Issues
+If installation fails, inspect Pinokio's terminal and `logs/api`. Retry **Install**
+after fixing the reported download or dependency error.
 
-If the model fails to load:
-- Ensure you have sufficient GPU memory (recommended: 8GB+ VRAM)
-- Check that CUDA is properly installed
-- Verify internet connection for model download
+For generation failures, check the device displayed in the UI. Close other
+memory-intensive applications, reduce dimensions, or reinstall in CPU mode.
+CPU inference can be very slow. A failed model load can be retried with
+**Generate**; the app only retains a pipeline after successful initialization.
 
-### Slow Generation
+## Development checks
 
-- Ensure you're using GPU acceleration (check CUDA availability)
-- Reduce inference steps for faster generation
-- Lower image resolution if needed
+```sh
+python -m unittest discover -s tests -v
+node --test tests/launcher.test.js
+```
 
-### Out of Memory Errors
+With the application dependencies installed, run `python tests/smoke_app.py`
+to exercise the real localhost Gradio API using a stub model image.
 
-- Reduce image dimensions (e.g., 512×512 instead of 1024×1024)
-- Close other GPU-intensive applications
-- Consider using CPU mode (much slower)
+The regression tests use model stubs and require no model download. Real image
+quality, accelerator support, and memory consumption require a full inference
+run on the target hardware.
 
-## License
+App logic is in `app/app.py` (UI) and `app/inference.py` (device selection,
+validation, and inference). Pinokio scripts live at the repository root.
 
-This plugin uses the Sana model from Efficient-Large-Model. Please refer to the original model's license for usage terms.
+## Credits and model license
 
-## Credits
-
-- **Sana Model**: Efficient-Large-Model/SANA1.5_1.6B_1024px_diffusers
-- **Pinokio**: Pinokio automation platform
-- **Gradio**: Web UI framework
-- **Hugging Face**: Model hosting and diffusers library
-
+- [SANA1.5 model and usage terms](https://huggingface.co/Efficient-Large-Model/SANA1.5_1.6B_1024px_diffusers)
+- [Pinokio](https://pinokio.computer/)
+- [Hugging Face Diffusers](https://github.com/huggingface/diffusers)
+- [Gradio](https://www.gradio.app/)

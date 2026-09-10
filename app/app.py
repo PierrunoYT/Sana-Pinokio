@@ -197,7 +197,7 @@ with gr.Blocks(title="Sana Image Generator", theme=gr.themes.Soft(), js=CTRL_ENT
         except Exception as exc:
             raise gr.Error(f"Error generating image: {exc}") from exc
         # After generation, update seed field to show what was used
-        return image, used_seed, gr.update(value=used_seed)
+        return image, used_seed, used_seed
 
     generate_btn.click(
         fn=run_generate,
