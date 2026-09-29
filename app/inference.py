@@ -43,8 +43,8 @@ def get_device():
 
 
 DEVICE = get_device()
-# Sana's text encoder and VAE require BF16 or FP32. Use FP32 on MPS
-# and older CUDA cards; casting FP16 weights back up cannot recover overflow.
+# Sana's text encoder and VAE require BF16 or FP32; FP16 overflows. CUDA uses
+# BF16, emulated on pre-Ampere cards (half the memory of FP32); MPS uses FP32.
 DTYPE = (torch.bfloat16 if DEVICE == "cuda" and torch.cuda.is_bf16_supported()
          else torch.float32)
 pipe = None

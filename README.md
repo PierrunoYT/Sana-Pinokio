@@ -37,9 +37,9 @@ the Hugging Face cache.
   transformer, not the total download size. FP32 uses more memory than BF16.
 
 The launcher pins PyTorch 2.7.0 and Diffusers 0.35.2, with Transformers 4.x to
-match Hugging Face Hub 0.36.0. NVIDIA/ROCm devices with BF16 support use BF16;
-other devices use FP32. Sana's text encoder and VAE require BF16 or FP32,
-so the MPS path uses FP32. See the [Sana precision documentation](https://huggingface.co/docs/diffusers/v0.35.0/en/api/pipelines/sana).
+match Hugging Face Hub 0.36.0. NVIDIA/ROCm devices use BF16 (emulated, and
+slower, on NVIDIA cards older than Ampere); CPU and MPS use FP32. Sana's text
+encoder and VAE require BF16 or FP32, so the MPS path uses FP32. See the [Sana precision documentation](https://huggingface.co/docs/diffusers/v0.35.0/en/api/pipelines/sana).
 
 ## Generation controls
 
