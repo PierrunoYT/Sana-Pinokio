@@ -44,6 +44,18 @@ class InferenceTests(unittest.TestCase):
         app, *_ = self.load_runtime("cuda", True)
         with patch.dict(os.environ, {"SANA_DEVICE": "cpu"}):
             self.assertEqual(app.get_device(), "cpu")
+        with patch.dict(os.environ, {"SANA_DEVICE": " CPU "}):
+            self.assertEqual(app.get_device(), "cpu")
+
+    def test_saved_preference_is_applied_and_damage_is_tolerated(self):
+        app, *_ = self.load_runtime("cuda", True)
+        env = {k: v for k, v in os.environ.items() if k != "SANA_DEVICE"}
+        for text, device in [('{"device": "cpu"}', "cpu"), ("", "cuda"),
+                             ("null", "cuda"), ('{"other": 1}', "cuda")]:
+            with self.subTest(text=text), patch.dict(os.environ, env, clear=True), \
+                    patch.object(app.Path, "read_text", return_value=text), \
+                    patch("builtins.print"):
+                self.assertEqual(app.get_device(), device)
 
     def test_failed_transfer_can_retry(self):
         app, _, pipe, factory = self.load_runtime()

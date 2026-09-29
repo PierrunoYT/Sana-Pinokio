@@ -13,15 +13,28 @@ from diffusers import SanaPipeline
 MODEL_ID = "Efficient-Large-Model/SANA1.5_1.6B_1024px_diffusers"
 
 
+def _saved_device():
+    config = Path(__file__).resolve().parent.parent / "env" / "sana-device.json"
+    try:
+        return json.loads(config.read_text(encoding="utf-8"))["device"]
+    except FileNotFoundError:
+        return None
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        # A damaged preference must not prevent the app from starting.
+        print(f"Ignoring unreadable device preference {config}: {exc!r}")
+        return None
+
+
 def get_device():
     requested = os.environ.get("SANA_DEVICE")
-    config = Path(__file__).resolve().parent.parent / "env" / "sana-device.json"
-    if requested is None and config.exists():
-        requested = json.loads(config.read_text(encoding="utf-8"))["device"]
+    if requested is None:
+        requested = _saved_device()
+    if isinstance(requested, str):
+        requested = requested.strip().lower()
     if requested == "cpu":
         return "cpu"
     if requested not in (None, "gpu", "auto"):
-        raise ValueError("SANA_DEVICE must be cpu, gpu, or auto")
+        raise ValueError(f"Unsupported device {requested!r}: use cpu, gpu, or auto")
     if torch.cuda.is_available():
         return "cuda"
     if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
