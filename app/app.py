@@ -40,13 +40,7 @@ SEED_CSS = """
     font-size:  13px     !important;
     line-height:1        !important;
     flex:       none     !important;
-    /* zero out the wrapper so it takes no flex width */
     --button-shadow: none;
-}
-/* Zero out the outer Gradio wrapper divs that wrap each button */
-#random_seed_btn,
-#reuse_seed_btn {
-    /* wrapper also needs zero width in flex */
 }
 #reuse_seed_btn  { right: 6px  !important; }
 #random_seed_btn { right: 36px !important; }
