@@ -9,6 +9,9 @@ __pycache__/
 # Logs
 logs/
 
+# Gradio runtime files (written to the working directory)
+.gradio/
+
 # IDE/Editor
 .vscode/
 .idea/
