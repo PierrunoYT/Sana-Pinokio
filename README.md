@@ -134,6 +134,28 @@ Model storage follows Hugging Face's cache configuration (`HF_HOME` /
 If installation fails, inspect Pinokio's terminal and `logs/api`. Retry **Install**
 after fixing the reported download or dependency error.
 
+### `ModuleNotFoundError: No module named 'torch'` on install or start
+
+This means the Python interpreter running the app cannot import PyTorch. Older
+launcher revisions used different working-directory/environment paths during
+setup and launch. The current scripts install, verify, update, and launch using
+one project-root `env`; installing PyTorch in your system Python does not repair
+that environment.
+
+1. Click **Update** to get the current launcher scripts, then run **Install** or
+   **Reinstall** to install PyTorch for the selected device. Update alone does
+   not rebuild the device-specific PyTorch installation.
+2. Confirm dependency verification prints `PyTorch` and its version before the
+   model download. Wait until installation finishes before clicking **Start**.
+3. If reinstalling still fails, use **Reset**, then **Install** for a clean
+   environment. Reset removes installed Python dependencies and the saved device
+   choice, but keeps application files and the shared model cache.
+
+If it still fails, include the first failing command and its full error from
+Pinokio's terminal or `logs/api`, your OS, GPU, and CPU/GPU installation choice
+in the issue. The final missing-module line alone cannot distinguish a failed
+package download from an environment-path problem.
+
 For generation failures, check the device displayed in the UI. Close other
 memory-intensive applications, reduce dimensions, or reinstall in CPU mode.
 CPU inference can be very slow. A failed model load can be retried with
@@ -143,7 +165,7 @@ CPU inference can be very slow. A failed model load can be retried with
 
 ```sh
 python -m unittest discover -s tests -v
-node --test tests/launcher.test.js
+node --test tests/*.test.js
 ```
 
 With the application dependencies installed, run `python tests/smoke_app.py`
